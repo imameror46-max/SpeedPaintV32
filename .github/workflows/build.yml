@@ -1,0 +1,28 @@
+name: Build APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ekstrak zip terbaru
+        run: unzip -o "$(ls -t *.zip | head -1)"
+      - name: Unduh model AI
+        run: |
+          mkdir -p JPGtoSketsa/app/src/main/assets
+          curl -L --fail --retry 3 -o JPGtoSketsa/app/src/main/assets/u2net_portrait.onnx \
+            https://github.com/Akiya-Research-Institute/U-2-Net-Portrait-on-UE4/releases/download/v0.1/U2Net_Protrait_1x512x512x3xBGRxByte.onnx
+          echo "d3a1fd91bfa9c4c191a18df038bd512c2746025de8e7e5615085c86f51289f63  JPGtoSketsa/app/src/main/assets/u2net_portrait.onnx" | sha256sum -c -
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - run: gradle assembleDebug
+        working-directory: JPGtoSketsa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JPGtoSketsa-apk
+          path: JPGtoSketsa/app/build/outputs/apk/debug/app-debug.apk
